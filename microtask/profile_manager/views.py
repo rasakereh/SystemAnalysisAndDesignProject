@@ -8,6 +8,8 @@ from django.contrib.auth import authenticate
 from profile_manager.models import Profile
 
 import json
+# Debug
+from pprint import pprint
 
 @csrf_exempt
 def register(req):
@@ -49,8 +51,14 @@ def register(req):
 @csrf_exempt
 def login(req):
     if req.method == 'POST':
+        print("Req is:")
+        pprint(req)
         body = dict(req.POST)
+        print("Body is:")
+        pprint(body)
+        print("Body changed to:")
         body = json.loads(list(body.keys())[0])
+        pprint(body)
         matches = User.objects.filter(Q(username = body['username'])|Q(password = body['password'])).all()
         if len(matches) != 1:
             return HttpResponseForbidden()
