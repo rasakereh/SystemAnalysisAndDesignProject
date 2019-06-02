@@ -1,5 +1,7 @@
 from django.shortcuts import render
 from django.http import HttpResponse
+from django.core.exceptions import PermissionDenied
+from django.core import serializers
 from django.views.decorators.csrf import csrf_exempt
 from django.contrib.auth.models import User
 from profile_manager.models import Profile
@@ -49,3 +51,9 @@ def login(req):
     if req.method == 'POST':
         body = dict(req.POST)
         body = json.loads(list(body.keys())[0])
+        matches = Profile.objects.filter(Q(username = body['username'])|Q(password = body['password'])).all()
+        if len(matches) != 1:
+            raise PermissionDenied
+        match = serializers.serialize("json", matches[0])
+
+        return HttpResponse(match, content_type="application/json")
