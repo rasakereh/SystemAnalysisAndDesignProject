@@ -14,7 +14,7 @@ git clone git@github.com:rasakereh/SystemAnalysisAndDesignProject.git
 
 ```bash
 python3 -m venv venv
-source venv/bin/actiavte
+source venv/bin/activate
 cd SystemAnalysisAndDesignProject
 cd microtask
 pip install -r requirements.txt
