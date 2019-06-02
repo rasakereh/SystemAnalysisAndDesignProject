@@ -3,6 +3,7 @@ from django.http import HttpResponse, HttpResponseBadRequest
 from django.core import serializers
 from django.views.decorators.csrf import csrf_exempt
 from django.contrib.auth.models import User
+from django.db.models import Q
 from django.contrib.auth import authenticate
 from profile_manager.models import Profile
 
@@ -44,18 +45,16 @@ def register(req):
         return HttpResponse("SUCCESS", content_type="text/plain")
 
     return HttpResponse("NOT A FORM", content_type="text/plain")
-    
+
 @csrf_exempt
 def login(req):
     if req.method == 'POST':
         body = dict(req.POST)
         body = json.loads(list(body.keys())[0])
-        
-        match = authenticate(username=body['username'], password=body['password'])
-        if match is None:
+        matches = User.objects.filter(Q(username = body['username'])|Q(password = body['password'])).all()
+        if len(matches) != 1:
             return HttpResponseForbidden()
-        match = serializers.serialize("json", match)
-
+        match = serializers.serialize('json', list(matches))
         return HttpResponse(match, content_type="application/json")
     
     return HttpResponseBadRequest()
