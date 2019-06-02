@@ -31,8 +31,8 @@ def register(req):
         
 
         user = User.objects.create_user(username, body['email'], body['password'])
-        user.first_name=body['firstName'],
-        user.last_name=body['lastName'])
+        user.first_name = body['firstName']
+        user.last_name = body['lastName']
         user.save()
         profile = Profile(user=user,
                 phone_num=body['phoneNum'],
@@ -45,6 +45,7 @@ def register(req):
 
     return HttpResponse("NOT A FORM", content_type="text/plain")
     
+@csrf_exempt
 def login(req):
     if req.method == 'POST':
         body = dict(req.POST)
