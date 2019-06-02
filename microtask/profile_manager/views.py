@@ -3,7 +3,11 @@ from django.http import HttpResponse, HttpResponseBadRequest
 from django.core import serializers
 from django.views.decorators.csrf import csrf_exempt
 from django.contrib.auth.models import User
+<<<<<<< HEAD
 from django.db.models import Q
+=======
+from django.contrib.auth import authenticate
+>>>>>>> 193faebd40bac746dcb54206ef5b212ae3e24d0e
 from profile_manager.models import Profile
 
 import json
@@ -30,11 +34,9 @@ def register(req):
             return HttpResponse("phone number", content_type="text/plain")
         
 
-        user = User(username=username,
-                        password=body['password'],
-                        email=body['email'],
-                        first_name=body['firstName'],
-                        last_name=body['lastName'])
+        user = User.objects.create_user(username, body['email'], body['password'])
+        user.first_name=body['firstName'],
+        user.last_name=body['lastName'])
         user.save()
         profile = Profile(user=user,
                 phone_num=body['phoneNum'],
@@ -46,7 +48,6 @@ def register(req):
         return HttpResponse("SUCCESS", content_type="text/plain")
 
     return HttpResponse("NOT A FORM", content_type="text/plain")
-    
 @csrf_exempt
 def login(req):
     if req.method == 'POST':
