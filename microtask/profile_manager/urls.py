@@ -1,10 +1,7 @@
 from django.urls import path
-from profile_manager.views import register, login
+from .views import current_user, UserList
 
 urlpatterns = [
-    path('register', register),
-    path('login', login)
+    path('current_user/', current_user),
+    path('users/', UserList.as_view())
 ]
-
-
-

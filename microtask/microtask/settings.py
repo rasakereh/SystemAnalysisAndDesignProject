@@ -37,8 +37,9 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'profile_manager',
-    'corsheaders'
+    'profile_manager.apps.ProfileManagerConfig',
+    'corsheaders',
+    'rest_framework'
 ]
 
 MIDDLEWARE = [
@@ -54,19 +55,24 @@ MIDDLEWARE = [
 
 ROOT_URLCONF = 'microtask.urls'
 
-CORS_ORIGIN_ALLOW_ALL = True
-CORS_ORIGIN_WHITELIST = [
-    "http://localhost:8080",
-]
-CORS_ALLOW_CREDENTIALS = True
+REST_FRAMEWORK = {
+    'DEFAULT_PERMISSION_CLASSES': (
+        'rest_framework.permissions.IsAuthenticated',
+    ),
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'rest_framework_jwt.authentication.JSONWebTokenAuthentication',
+        'rest_framework.authentication.SessionAuthentication',
+        'rest_framework.authentication.BasicAuthentication',
+    ),
+}
 
 CORS_ORIGIN_WHITELIST = (
     'http://localhost:8080',
 )
 
-CSRF_TRUSTED_ORIGINS = (
-    'http://localhost:8080',
-)
+JWT_AUTH = {
+    'JWT_RESPONSE_PAYLOAD_HANDLER': 'microtask.utils.my_jwt_response_handler'
+}
 
 TEMPLATES = [
     {

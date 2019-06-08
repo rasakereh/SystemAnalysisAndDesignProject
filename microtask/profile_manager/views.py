@@ -1,62 +1,34 @@
-from django.shortcuts import render
-from django.http import HttpResponse, HttpResponseBadRequest
-from django.core import serializers
-from django.views.decorators.csrf import csrf_exempt
+from django.http import HttpResponseRedirect
 from django.contrib.auth.models import User
-<<<<<<< HEAD
-from django.db.models import Q
-=======
-from django.contrib.auth import authenticate
->>>>>>> 193faebd40bac746dcb54206ef5b212ae3e24d0e
-from profile_manager.models import Profile
+from rest_framework import permissions, status
+from rest_framework.decorators import api_view
+from rest_framework.response import Response
+from rest_framework.views import APIView
+from .serializers import UserSerializer, UserSerializerWithToken
 
-import json
 
-@csrf_exempt
-def register(req):
-    if req.method == 'POST':
-        body = dict(req.POST)
-        body = json.loads(list(body.keys())[0])
-        username = body['username']
-        email = body['email']
-        nationalid = body['nationalid']
-        
-        user = User.objects.filter(username=body['username'])
-        if len(user) == 1:
-            return HttpResponse("username", content_type="text/plain")
-
-        user = User.objects.filter(email=body['email'])
-        if len(user) == 1:
-            return HttpResponse("email", content_type="text/plain")
-        
-        user = Profile.objects.filter(phone_num=body['phoneNum'])
-        if len(user) == 1:
-            return HttpResponse("phone number", content_type="text/plain")
-        
-
-        user = User.objects.create_user(username, body['email'], body['password'])
-        user.first_name=body['firstName'],
-        user.last_name=body['lastName'])
-        user.save()
-        profile = Profile(user=user,
-                phone_num=body['phoneNum'],
-                city=body['city'],
-                country=body['country'],
-                gender=body['gender'])
-
-        profile.save()
-        return HttpResponse("SUCCESS", content_type="text/plain")
-
-    return HttpResponse("NOT A FORM", content_type="text/plain")
-@csrf_exempt
-def login(req):
-    if req.method == 'POST':
-        body = dict(req.POST)
-        body = json.loads(list(body.keys())[0])
-        matches = User.objects.filter(Q(username = body['username'])|Q(password = body['password'])).all()
-        if len(matches) != 1:
-            return HttpResponseForbidden()
-        match = serializers.serialize('json', list(matches))
-        return HttpResponse(match, content_type="application/json")
+@api_view(['GET'])
+def current_user(request):
+    """
+    Determine the current user by their token, and return their data
+    """
     
-    return HttpResponseBadRequest()
+    serializer = UserSerializer(request.user)
+    return Response(serializer.data)
+
+
+class UserList(APIView):
+    """
+    Create a new user. It's called 'UserList' because normally we'd have a get
+    method here too, for retrieving a list of all User objects.
+    """
+
+    permission_classes = (permissions.AllowAny,)
+
+    def post(self, request, format=None):
+        serializer = UserSerializerWithToken(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        
