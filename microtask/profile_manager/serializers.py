@@ -16,7 +16,6 @@ class UserSerializerWithToken(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True)
     email = serializers.EmailField(allow_blank=False)
 
-
     def get_token(self, obj):
         jwt_payload_handler = api_settings.JWT_PAYLOAD_HANDLER
         jwt_encode_handler = api_settings.JWT_ENCODE_HANDLER
@@ -39,3 +38,9 @@ class UserSerializerWithToken(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ('token', 'username', 'password', 'email',)
+
+
+class ProfileSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Profile
+        fields = ('token', '')
