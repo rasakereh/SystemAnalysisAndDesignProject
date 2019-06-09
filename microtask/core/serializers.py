@@ -40,7 +40,10 @@ class UserSerializerWithToken(serializers.ModelSerializer):
         fields = ('token', 'username', 'password', 'email',)
 
 
-class ProfileSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Profile
-        fields = ('token', '')
+class ChangePasswordSerializer(serializers.Serializer):
+    """
+    Serializer for password change endpoint.
+    """
+    old_password = serializers.CharField(required=True)
+    new_password = serializers.CharField(required=True)
+
