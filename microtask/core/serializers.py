@@ -2,7 +2,7 @@ from rest_framework import serializers
 from rest_framework_jwt.settings import api_settings
 from django.contrib.auth.models import User
 from django.contrib.auth.models import Group
-from profile_manager.models import Profile
+from core.models import Profile
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -31,7 +31,7 @@ class UserSerializerWithToken(serializers.ModelSerializer):
             instance.set_password(password)
 
         instance.save()
-        Group.objects.get(name='Workers').user_set.add(instance)
+        Group.objects.get(name='workers').user_set.add(instance)
         Profile(user=instance).save()
         return instance
 
