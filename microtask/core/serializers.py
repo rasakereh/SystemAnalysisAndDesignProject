@@ -13,7 +13,7 @@ class UserSerializer(serializers.ModelSerializer):
 
 class UserSerializerWithToken(serializers.ModelSerializer):
     token = serializers.SerializerMethodField()
-    password = serializers.CharField(write_only=True)
+    password = serializers.CharField(write_only=True, allow_blank=False)
     email = serializers.EmailField(allow_blank=False)
 
     def get_token(self, obj):
