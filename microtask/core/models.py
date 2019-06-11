@@ -8,7 +8,8 @@ class Profile(models.Model):
     city = models.CharField(max_length=250)
     country = models.CharField(max_length=250)
     gender = models.CharField(max_length=10)
-    avatar = models.ImageField()
+    avatar = models.ImageField(upload_to="profiles/images/", null=True, blank=True)
+    bank_account = models.CharField(max_length=20)
 
     def __str__(self):
         return self.phone
@@ -16,6 +17,3 @@ class Profile(models.Model):
 
 class Reputation(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
-
-
-

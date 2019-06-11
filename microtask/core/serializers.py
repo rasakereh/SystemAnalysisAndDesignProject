@@ -47,3 +47,24 @@ class ChangePasswordSerializer(serializers.Serializer):
     old_password = serializers.CharField(required=True)
     new_password = serializers.CharField(required=True)
 
+
+class ChangeLocation(serializers.ModelSerializer):
+
+    class Meta:
+        model = Profile
+        fields = ('country', 'city')
+
+
+class ChangeBankAccount(serializers.ModelSerializer):
+
+    class Meta:
+        model = Profile
+        fields = ('bank_account', )
+
+
+class ChangePhone(serializers.ModelSerializer):
+
+    class Meta:
+        model = Profile
+        fields = ('phone', )
+
