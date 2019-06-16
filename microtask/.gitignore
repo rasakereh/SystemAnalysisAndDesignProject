@@ -269,3 +269,5 @@ fabric.properties
 # Sonarlint plugin
 
 # End of https://www.gitignore.io/api/django,pycharm,intellij
+
+media

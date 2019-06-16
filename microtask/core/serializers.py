@@ -1,8 +1,10 @@
 from rest_framework import serializers
+from rest_framework.parsers import FileUploadParser
+from rest_framework.response import Response
 from rest_framework_jwt.settings import api_settings
 from django.contrib.auth.models import User
 from django.contrib.auth.models import Group
-from core.models import Profile
+from core.models import Profile, Document
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -49,22 +51,24 @@ class ChangePasswordSerializer(serializers.Serializer):
 
 
 class ChangeLocation(serializers.ModelSerializer):
-
     class Meta:
         model = Profile
         fields = ('country', 'city')
 
 
 class ChangeBankAccount(serializers.ModelSerializer):
-
     class Meta:
         model = Profile
-        fields = ('bank_account', )
+        fields = ('bank_account',)
 
 
 class ChangePhone(serializers.ModelSerializer):
-
     class Meta:
         model = Profile
-        fields = ('phone', )
+        fields = ('phone',)
 
+
+class DocumentSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Document
+        fields = ('doc_file',)
