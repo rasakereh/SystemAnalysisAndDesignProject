@@ -163,6 +163,7 @@ class DatasetUploadView(APIView):
         new_doc = DocumentSerializer(data=request.data)
         if new_doc.is_valid():
             new_doc.save()
+
             return Response(status=204)
 
         return Response(new_doc.errors, status=status.HTTP_400_BAD_REQUEST)
