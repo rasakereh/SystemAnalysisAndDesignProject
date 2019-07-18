@@ -9,41 +9,83 @@ class Profile(models.Model):
     country = models.CharField(max_length=250)
     gender = models.CharField(max_length=10)
     avatar = models.ImageField(upload_to="profiles/images/", null=True, blank=True)
-    bank_account = models.CharField(max_length=20)
+    bank_account = models.CharField(max_length=20, default=-1)
 
     def __str__(self):
         return self.phone
 
 
 class Document(models.Model):
-    doc_file = models.FileField(upload_to='documents/%Y/%m/%d')
+    doc_file = models.FileField(upload_to='documents/')
 
+    def __str__(self):
+        return self.doc_file.name
 
 class Dataset(models.Model):
-    IMG2TXT = 'I2T'
-    VOICE2TXT = 'V2T'
-    TXT2TXT = 'T2T'
-    TXT2VOICE = 'T2V'
-    DATASET_TYPE_CHOICES = (
-        (IMG2TXT, 'Image Labeling'),
-        (VOICE2TXT, 'Voice To Text'),
-        (TXT2TXT, 'Text To Text'),
-        (TXT2VOICE, 'Text To Voice')
-    )
-    root = models.CharField(max_length=250)
-    dataType = models.CharField(
-        max_length=3,
-        choices=DATASET_TYPE_CHOICES,
-    )
+    document = models.OneToOneField(Document, on_delete=models.CASCADE, null=True, blank=True)
+    dataType = models.CharField(max_length=250)
+
+    def __str__(self):
+        return self.document.doc_file.name
+
+class Task(models.Model):
+    cost = models.IntegerField(default=0)
+    requester = models.OneToOneField(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='requester')
+    worker = models.OneToOneField(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='worker')
+    report_count = models.IntegerField(default=0)
+
+    def __str__(self):
+        return str(self.id)
+
+class Image(models.Model):
+    name = models.CharField(max_length=250)
+    image = models.ImageField(upload_to='images/')
+
+    def __str__(self):
+        return self.name
+
+class ImageLabelingTask(Task):
+    content = models.OneToOneField(Image, on_delete=models.CASCADE)
+    category = models.CharField(max_length=250)
+    answer = models.BooleanField(default=False)
+
+    def __str__(self):
+        return str(self.id)
 
 
-'''
-class Question(models.Model):
-    qid = models.AutoField(primary_key=True)
-    for_all = models.BooleanField()
-    image_name = models.ImageField()
-    answer_options = models.CharField(max_length=4096)
+class Voice(models.Model):
+    name = models.CharField(max_length=250)
+    voice = models.FileField(upload_to='voices/', blank=True, null=True)
 
-class Answer(models.Model):
-    qid = models.AutoField(primary_key=True)
-'''
+    def __str__(self):
+        return str(self.name)
+
+
+class VoiceToTextTask(Task):
+    content = models.OneToOneField(Voice, on_delete=models.CASCADE)
+    answer = models.CharField(max_length=250)
+
+    def __str__(self):
+        return str(self.id)
+
+class TextToVoiceTask(Task):
+    content = models.CharField(max_length=250)
+    answer = models.FileField(upload_to='voices/')
+
+
+class TextToTextTask(Task):
+    content = models.CharField(max_length=250)
+    answer = models.CharField(max_length=250)
+
+
+class Wallet(models.Model):
+    user = models.OneToOneField(User, on_delete=models.CASCADE)
+    balance = models.IntegerField(default=0)
+
+
+class Transaction(models.Model):
+    wallet = models.ForeignKey(Wallet, on_delete=models.CASCADE)
+    type = models.CharField(max_length=250)
+    amount = models.IntegerField(default=0)
+
+ 

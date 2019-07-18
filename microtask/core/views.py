@@ -1,3 +1,4 @@
+import threading
 from django.shortcuts import render, HttpResponseRedirect
 from django.urls import reverse
 from rest_framework import permissions, status
@@ -7,15 +8,18 @@ from rest_framework.parsers import FileUploadParser, MultiPartParser
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from core.models import Profile
+from core.models import Profile, ImageLabelingTask
 from .serializers import UserSerializer, UserSerializerWithToken, ChangePasswordSerializer, ChangeLocation, \
-    ChangeBankAccount, ChangePhone, DocumentSerializer
+    ChangeBankAccount, ChangePhone, DocumentSerializer, ImageSerializer
 from django.contrib.auth.models import User
 from .serializers import UserSerializer, UserSerializerWithToken
-# for uploading
-from .models import Document
-from .forms import DocumentForm
+from .models import Document, Dataset
 from .upload import chopToMicrotasks, saveFile, validateUpload
+import zipfile
+import os
+from django.conf import settings
+from core.models import Image
+from rest_framework import viewsets
 
 
 @api_view(['GET'])
@@ -159,34 +163,43 @@ class DatasetUploadView(APIView):
     parser_classes = (MultiPartParser,)
 
     def post(self, request, format=None):
-        print(request.data)
         new_doc = DocumentSerializer(data=request.data)
         if new_doc.is_valid():
             new_doc.save()
+            dataset = Dataset(document=Document.objects.latest('id'))
+            dataset.dataType = request.data['dataType']
+            dataset.save()
+            if request.data['dataType'] == 'Image Labeling':
+                zip_ref = zipfile.ZipFile(os.path.join(settings.MEDIA_ROOT, Document.objects.latest('id').doc_file.name), 'r')
+                zip_ref.extractall(os.path.join(settings.MEDIA_ROOT))
+                zip_ref.close()
+                print('extract successfull')
+                dirs = os.listdir(path=os.path.join(settings.MEDIA_ROOT))
+                print(dirs)
+                for dir in dirs:
+                    if dir == 'documents' or dir == 'images':
+                        continue
+                    for r, d, f in os.walk(top=os.path.join(settings.MEDIA_ROOT)):
+                        for file in f:
+                            img = Image(name=file)
+                            img.image = os.path.join(dir, file)
+                            img.save()
+                            img_task = ImageLabelingTask(content=Image.objects.latest('id'), category=dir)
+                            img_task.save()
+                            
+
+            elif request.data['dataType'] == 'Voice To Text':
+                pass
+            elif request.data['dataType'] == 'Text To Voice':
+                pass
+            elif request.data['dataType'] == 'Text To Text':
+                pass
+
             return Response(status=204)
 
         return Response(new_doc.errors, status=status.HTTP_400_BAD_REQUEST)
 
-# def datasetUpload(request):
-#     # Handle file upload
-#     if request.method == 'POST':
-#         form = DocumentForm(request.POST, request.FILES)
-#         if form.is_valid():
-#             newdoc = Document(docfile=request.FILES['docfile'])
-#             newdoc.save()
-#             if not validateUpload(newdoc.docfile.url):
-#                 newdoc.delete()
-#                 return HttpResponseRedirect(reverse('uploadDataset'))
-#             datasetPath = saveFile(newdoc.docfile.url)
-#             chopToMicrotasks(datasetPath)
-#
-#             # Redirect to the document list after POST
-#             return HttpResponseRedirect(reverse('uploadDataset'))
-#     else:
-#         form = DocumentForm()  # A empty, unbound form
-#
-#     # Load documents for the list page
-#     documents = Document.objects.all()
-#
-#     # Render list page with the documents and the form
-#     return render(request, 'upload.html', {'documents': documents, 'form': form})
+
+class ImageViewSet(viewsets.ReadOnlyModelViewSet):
+    queryset = Image.objects.all()
+    serializer_class = ImageSerializer

@@ -4,7 +4,7 @@ from rest_framework.response import Response
 from rest_framework_jwt.settings import api_settings
 from django.contrib.auth.models import User
 from django.contrib.auth.models import Group
-from core.models import Profile, Document
+from core.models import Profile, Document, Dataset, Image
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -72,3 +72,8 @@ class DocumentSerializer(serializers.ModelSerializer):
     class Meta:
         model = Document
         fields = ('doc_file',)
+
+class ImageSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Image
+        fields = ('name', 'image')
