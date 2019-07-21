@@ -15,8 +15,9 @@ from .serializers import UserSerializer, UserSerializerWithToken
 # for uploading
 from .models import Document
 from .forms import DocumentForm
-from .upload import chopToMicrotasks, saveFile, validateUpload
+from .upload import chopToMicrotasks, getUploadPath, getUnzippedPath
 
+from pprint import pprint
 
 @api_view(['GET'])
 def current_user(request):
@@ -162,7 +163,10 @@ class DatasetUploadView(APIView):
         print(request.data)
         new_doc = DocumentSerializer(data=request.data)
         if new_doc.is_valid():
-            new_doc.save()
+            new_doc = new_doc.save()
+            new_path = getUploadPath(new_doc)
+            unzipped_path = getUnzippedPath(new_path)
+            chopToMicrotasks(unzipped_path)
 
             return Response(status=204)
 
