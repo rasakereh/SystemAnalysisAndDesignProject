@@ -29,6 +29,9 @@ class Dataset(models.Model):
         return self.document.doc_file.name
 
 class Task(models.Model):
+    question = models.CharField(max_length=250, default="")
+    answerChoices = models.CharField(max_length=250, blank=True, null=True)
+    qid = models.IntegerField()
     cost = models.IntegerField(default=0)
     requester = models.OneToOneField(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='requester')
     worker = models.OneToOneField(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='worker')
@@ -39,7 +42,7 @@ class Task(models.Model):
 
 class Image(models.Model):
     name = models.CharField(max_length=250)
-    image = models.ImageField(upload_to='images/')
+    contentPath = models.ImageField(upload_to='images/')
 
     def __str__(self):
         return self.name
@@ -55,7 +58,7 @@ class ImageLabelingTask(Task):
 
 class Voice(models.Model):
     name = models.CharField(max_length=250)
-    voice = models.FileField(upload_to='voices/', blank=True, null=True)
+    contentPath = models.FileField(upload_to='voices/', blank=True, null=True)
 
     def __str__(self):
         return str(self.name)

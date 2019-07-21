@@ -21,6 +21,8 @@ from django.conf import settings
 from core.models import Image
 from rest_framework import viewsets
 
+from pprint import pprint
+
 
 @api_view(['GET'])
 def current_user(request):
@@ -170,22 +172,28 @@ class DatasetUploadView(APIView):
             dataset.dataType = request.data['dataType']
             dataset.save()
             if request.data['dataType'] == 'Image Labeling':
-                zip_ref = zipfile.ZipFile(os.path.join(settings.MEDIA_ROOT, Document.objects.latest('id').doc_file.name), 'r')
-                zip_ref.extractall(os.path.join(settings.MEDIA_ROOT))
+                docName = os.path.join(settings.MEDIA_ROOT, Document.objects.latest('id').doc_file.name)
+                extractPath = os.path.join(settings.MEDIA_ROOT, str(dataset.id))
+                zip_ref = zipfile.ZipFile(docName, 'r')
+                zip_ref.extractall(extractPath)
                 zip_ref.close()
                 print('extract successfull')
-                dirs = os.listdir(path=os.path.join(settings.MEDIA_ROOT))
+                dirs = os.listdir(path=extractPath)
                 print(dirs)
-                for dir in dirs:
-                    if dir == 'documents' or dir == 'images':
+                for dir in ['images', 'questions.csv']:  # questions.csv must be checked at "last"
+                    if not os.path.exists(os.path.join(extractPath, dir)):
+                        # bad file structure
+                        break
+                    if dir == 'questions.csv':
+                        chopToMicrotasks(os.path.join(extractPath, dir), Image, ImageLabelingTask, 'images')
                         continue
-                    for r, d, f in os.walk(top=os.path.join(settings.MEDIA_ROOT)):
+                    # dir == "images"
+                    imagesDir = os.path.join(extractPath, dir)
+                    for r, d, f in os.walk(top=imagesDir):
                         for file in f:
                             img = Image(name=file)
-                            img.image = os.path.join(dir, file)
+                            img.contentPath = os.path.join(imagesDir, file)
                             img.save()
-                            img_task = ImageLabelingTask(content=Image.objects.latest('id'), category=dir)
-                            img_task.save()
                             
 
             elif request.data['dataType'] == 'Voice To Text':
