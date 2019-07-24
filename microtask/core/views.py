@@ -10,16 +10,19 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from core.models import Profile, ImageLabelingTask
 from .serializers import UserSerializer, UserSerializerWithToken, ChangePasswordSerializer, ChangeLocation, \
-    ChangeBankAccount, ChangePhone, DocumentSerializer, ImageSerializer
+    ChangeBankAccount, ChangePhone, DocumentSerializer, ImageSerializer, FetchTaskSerializer, \
+    TaskSerializer, VoiceSerializer, JobDoneSerializer
 from django.contrib.auth.models import User
 from .serializers import UserSerializer, UserSerializerWithToken
-from .models import Document, Dataset
+from .models import Document, Dataset, Task, JobDone
 from .upload import chopToMicrotasks, saveFile, validateUpload
 import zipfile
 import os
 from django.conf import settings
-from core.models import Image
+from core.models import Image, Voice
 from rest_framework import viewsets
+from django.core.serializers import serialize
+import json
 
 from pprint import pprint
 
@@ -195,13 +198,77 @@ class DatasetUploadView(APIView):
                             img.contentPath = os.path.join(imagesDir, file)
                             img.save()
                             
-
             elif request.data['dataType'] == 'Voice To Text':
-                pass
+                docName = os.path.join(settings.MEDIA_ROOT, Document.objects.latest('id').doc_file.name)
+                extractPath = os.path.join(settings.MEDIA_ROOT, str(dataset.id))
+                zip_ref = zipfile.ZipFile(docName, 'r')
+                zip_ref.extractall(extractPath)
+                zip_ref.close()
+                print('extract successfull')
+                dirs = os.listdir(path=extractPath)
+                print(dirs)
+                for dir in ['voices', 'questions.csv']:  # questions.csv must be checked at "last"
+                    if not os.path.exists(os.path.join(extractPath, dir)):
+                        # bad file structure
+                        break
+                    if dir == 'questions.csv':
+                        chopToMicrotasks(os.path.join(extractPath, dir), Voice, ImageLabelingTask, 'images')
+                        continue
+                    # dir == "images"
+                    imagesDir = os.path.join(extractPath, dir)
+                    for r, d, f in os.walk(top=imagesDir):
+                        for file in f:
+                            img = Image(name=file)
+                            img.contentPath = os.path.join(imagesDir, file)
+                            img.save()
+
             elif request.data['dataType'] == 'Text To Voice':
-                pass
+                docName = os.path.join(settings.MEDIA_ROOT, Document.objects.latest('id').doc_file.name)
+                extractPath = os.path.join(settings.MEDIA_ROOT, str(dataset.id))
+                zip_ref = zipfile.ZipFile(docName, 'r')
+                zip_ref.extractall(extractPath)
+                zip_ref.close()
+                print('extract successfull')
+                dirs = os.listdir(path=extractPath)
+                print(dirs)
+                for dir in ['images', 'questions.csv']:  # questions.csv must be checked at "last"
+                    if not os.path.exists(os.path.join(extractPath, dir)):
+                        # bad file structure
+                        break
+                    if dir == 'questions.csv':
+                        chopToMicrotasks(os.path.join(extractPath, dir), Image, ImageLabelingTask, 'images')
+                        continue
+                    # dir == "images"
+                    imagesDir = os.path.join(extractPath, dir)
+                    for r, d, f in os.walk(top=imagesDir):
+                        for file in f:
+                            img = Image(name=file)
+                            img.contentPath = os.path.join(imagesDir, file)
+                            img.save()
+                
             elif request.data['dataType'] == 'Text To Text':
-                pass
+                docName = os.path.join(settings.MEDIA_ROOT, Document.objects.latest('id').doc_file.name)
+                extractPath = os.path.join(settings.MEDIA_ROOT, str(dataset.id))
+                zip_ref = zipfile.ZipFile(docName, 'r')
+                zip_ref.extractall(extractPath)
+                zip_ref.close()
+                print('extract successfull')
+                dirs = os.listdir(path=extractPath)
+                print(dirs)
+                for dir in ['images', 'questions.csv']:  # questions.csv must be checked at "last"
+                    if not os.path.exists(os.path.join(extractPath, dir)):
+                        # bad file structure
+                        break
+                    if dir == 'questions.csv':
+                        chopToMicrotasks(os.path.join(extractPath, dir), Image, ImageLabelingTask, 'images')
+                        continue
+                    # dir == "images"
+                    imagesDir = os.path.join(extractPath, dir)
+                    for r, d, f in os.walk(top=imagesDir):
+                        for file in f:
+                            img = Image(name=file)
+                            img.contentPath = os.path.join(imagesDir, file)
+                            img.save()
 
             return Response(status=204)
 
@@ -211,3 +278,52 @@ class DatasetUploadView(APIView):
 class ImageViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Image.objects.all()
     serializer_class = ImageSerializer
+
+class VoiceViewSet(viewsets.ReadOnlyModelViewSet):
+    queryset = Voice.objects.all()
+    serializer_class = VoiceSerializer
+
+class FetchTask(APIView):
+    """
+    Create a new user. It's called 'UserList' because normally we'd have a get
+    method here too, for retrieving a list of all User objects.
+    """
+
+    permission_classes = (permissions.IsAuthenticated,)
+
+    def post(self, request, format=None):
+        serializer = FetchTaskSerializer(data=request.data)
+        # pprint(request.data)
+        # pprint(serializer)
+        if serializer.is_valid():
+            queryResponse = None
+            if serializer.data.get('taskType') == 'Image Labeling':
+                result = ImageLabelingTask.objects.order_by('?').all()[:10]
+                queryResponse = TaskSerializer(result, many = True)
+            elif serializer.data.get('taskType') == 'Voice To Text':
+                result = ImageLabelingTask.objects.order_by('?').all()[:10]
+                queryResponse = TaskSerializer(result, many = True)
+            elif serializer.data.get('taskType') == 'Text To Voice':
+                result = ImageLabelingTask.objects.order_by('?').all()[:10]
+                queryResponse = TaskSerializer(result, many = True)
+            elif serializer.data.get('taskType') == 'Text To Text':
+                result = ImageLabelingTask.objects.order_by('?').all()[:10]
+                queryResponse = TaskSerializer(result, many = True)
+            if queryResponse != None:
+                return Response(queryResponse.data, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+class JobSubmitView(APIView):
+    permission_classes = (IsAuthenticated,)
+
+    def post(self, request, format=None):
+        serializer = JobDoneSerializer(data=request.data)
+        if serializer.is_valid():
+            taskDone = Task.objects.filter(id = serializer.data.get('taskID')).latest('id')
+            answerText = serializer.data.get('answer')
+            newJobDone = JobDone(doer = self.request.user, task = taskDone, answerText = answerText)
+            newJobDone.save()
+            return Response("Success.", status=status.HTTP_200_OK)
+
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+

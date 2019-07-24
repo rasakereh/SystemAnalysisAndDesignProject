@@ -4,7 +4,8 @@ from rest_framework.response import Response
 from rest_framework_jwt.settings import api_settings
 from django.contrib.auth.models import User
 from django.contrib.auth.models import Group
-from core.models import Profile, Document, Dataset, Image
+from core.models import Profile, Document, Dataset, JobDone
+from core.models import Image, Task, ImageLabelingTask, Voice, VoiceToTextTask, TextToVoiceTask, TextToTextTask
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -76,4 +77,26 @@ class DocumentSerializer(serializers.ModelSerializer):
 class ImageSerializer(serializers.ModelSerializer):
     class Meta:
         model = Image
-        fields = ('name', 'image')
+        fields = ('name', 'contentPath')
+
+class VoiceSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Voice
+        fields = ('name', 'contentPath')
+
+class FetchTaskSerializer(serializers.Serializer):
+    """
+    Serializer for password change endpoint.
+    """
+    taskType = serializers.CharField(required=True)
+    # new_password = serializers.CharField(required=True)
+
+class TaskSerializer(serializers.ModelSerializer):
+    id = serializers.IntegerField(label='ID', read_only=False)
+    class Meta:
+        model = Task
+        fields = ('question', 'answerChoices', 'category', 'id')
+
+class JobDoneSerializer(serializers.Serializer):
+    taskID = serializers.CharField(required=True)
+    answer = serializers.CharField(required=True)

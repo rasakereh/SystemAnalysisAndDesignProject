@@ -25,7 +25,14 @@ def chopToMicrotasks(filePath, contentModel, saverModel, category):
             qText, isForAll, filename, choices, qid = question
             qText, isForAll, filename, choices, qid = qText.strip(), isForAll.strip() == "true", filename.strip(), choices.strip(), int(qid.strip())
             if isForAll:
-                pass
+                queryContentPath = os.path.join(os.path.dirname(filePath), category + "/")
+                contents = contentModel.objects.filter(contentPath__startswith = queryContentPath).all()
+                for content in contents:
+                    newTask = saverModel(content=content, category=category)
+                    newTask.question = qText
+                    newTask.answerChoices = None if choices == "NA" else choices
+                    newTask.qid = qid
+                    newTask.save()
             else:
                 queryContentPath = os.path.join(os.path.dirname(filePath), category + "/" + filename)
                 content = contentModel.objects.filter(contentPath = queryContentPath).latest('id')

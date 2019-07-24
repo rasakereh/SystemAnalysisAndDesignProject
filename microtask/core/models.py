@@ -32,6 +32,7 @@ class Task(models.Model):
     question = models.CharField(max_length=250, default="")
     answerChoices = models.CharField(max_length=250, blank=True, null=True)
     qid = models.IntegerField()
+    category = models.CharField(max_length=250)
     cost = models.IntegerField(default=0)
     requester = models.OneToOneField(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='requester')
     worker = models.OneToOneField(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='worker')
@@ -48,8 +49,7 @@ class Image(models.Model):
         return self.name
 
 class ImageLabelingTask(Task):
-    content = models.OneToOneField(Image, on_delete=models.CASCADE)
-    category = models.CharField(max_length=250)
+    content = models.ForeignKey(Image, on_delete=models.CASCADE)
     answer = models.BooleanField(default=False)
 
     def __str__(self):
@@ -80,6 +80,12 @@ class TextToTextTask(Task):
     content = models.CharField(max_length=250)
     answer = models.CharField(max_length=250)
 
+class JobDone(models.Model):
+    doer = models.ForeignKey(User, on_delete=models.CASCADE)
+    task = models.ForeignKey(Task, on_delete=models.CASCADE)
+    verified = models.BooleanField(default = False)
+    answerText = models.CharField(max_length=250, blank=True, null=True)
+    answerFile = models.FileField(upload_to='answers/', blank=True, null=True)
 
 class Wallet(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
