@@ -31,7 +31,7 @@ class Dataset(models.Model):
 class Task(models.Model):
     question = models.CharField(max_length=250, default="")
     answerChoices = models.CharField(max_length=250, blank=True, null=True)
-    qid = models.IntegerField()
+    qid = models.IntegerField(default=0)
     category = models.CharField(max_length=250)
     cost = models.IntegerField(default=0)
     requester = models.OneToOneField(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='requester')
@@ -43,14 +43,13 @@ class Task(models.Model):
 
 class Image(models.Model):
     name = models.CharField(max_length=250)
-    contentPath = models.ImageField(upload_to='images/')
+    contentPath = models.ImageField(upload_to='images/', max_length=512)
 
     def __str__(self):
         return self.name
 
 class ImageLabelingTask(Task):
     content = models.ForeignKey(Image, on_delete=models.CASCADE)
-    answer = models.BooleanField(default=False)
 
     def __str__(self):
         return str(self.id)
@@ -58,27 +57,27 @@ class ImageLabelingTask(Task):
 
 class Voice(models.Model):
     name = models.CharField(max_length=250)
-    contentPath = models.FileField(upload_to='voices/', blank=True, null=True)
+    contentPath = models.FileField(upload_to='voices/', max_length=512)
 
     def __str__(self):
         return str(self.name)
 
 
 class VoiceToTextTask(Task):
-    content = models.OneToOneField(Voice, on_delete=models.CASCADE)
-    answer = models.CharField(max_length=250)
+    content = models.ForeignKey(Voice, on_delete=models.CASCADE)
 
     def __str__(self):
         return str(self.id)
 
-class TextToVoiceTask(Task):
-    content = models.CharField(max_length=250)
-    answer = models.FileField(upload_to='voices/')
+class Text(Task):
+    name = models.CharField(max_length=250)
+    contentPath = models.FileField(upload_to='texts/', max_length=250)
 
+class TextToVoiceTask(Task):
+    content = models.ForeignKey(Text, on_delete=models.CASCADE)
 
 class TextToTextTask(Task):
-    content = models.CharField(max_length=250)
-    answer = models.CharField(max_length=250)
+    content = models.ForeignKey(Text, on_delete=models.CASCADE)
 
 class JobDone(models.Model):
     doer = models.ForeignKey(User, on_delete=models.CASCADE)

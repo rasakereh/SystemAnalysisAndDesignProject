@@ -8,7 +8,7 @@ from rest_framework.parsers import FileUploadParser, MultiPartParser
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from core.models import Profile, ImageLabelingTask
+from core.models import Profile, ImageLabelingTask, VoiceToTextTask, TextToTextTask, TextToVoiceTask
 from .serializers import UserSerializer, UserSerializerWithToken, ChangePasswordSerializer, ChangeLocation, \
     ChangeBankAccount, ChangePhone, DocumentSerializer, ImageSerializer, FetchTaskSerializer, \
     TaskSerializer, VoiceSerializer, JobDoneSerializer
@@ -19,7 +19,7 @@ from .upload import chopToMicrotasks, saveFile, validateUpload
 import zipfile
 import os
 from django.conf import settings
-from core.models import Image, Voice
+from core.models import Image, Voice, Text
 from rest_framework import viewsets
 from django.core.serializers import serialize
 import json
@@ -212,15 +212,15 @@ class DatasetUploadView(APIView):
                         # bad file structure
                         break
                     if dir == 'questions.csv':
-                        chopToMicrotasks(os.path.join(extractPath, dir), Voice, ImageLabelingTask, 'images')
+                        chopToMicrotasks(os.path.join(extractPath, dir), Voice, VoiceToTextTask, 'voices')
                         continue
-                    # dir == "images"
-                    imagesDir = os.path.join(extractPath, dir)
-                    for r, d, f in os.walk(top=imagesDir):
+                    # dir == "voices"
+                    voicesDir = os.path.join(extractPath, dir)
+                    for r, d, f in os.walk(top=voicesDir):
                         for file in f:
-                            img = Image(name=file)
-                            img.contentPath = os.path.join(imagesDir, file)
-                            img.save()
+                            vc = Voice(name=file)
+                            vc.contentPath = os.path.join(voicesDir, file)
+                            vc.save()
 
             elif request.data['dataType'] == 'Text To Voice':
                 docName = os.path.join(settings.MEDIA_ROOT, Document.objects.latest('id').doc_file.name)
@@ -231,7 +231,7 @@ class DatasetUploadView(APIView):
                 print('extract successfull')
                 dirs = os.listdir(path=extractPath)
                 print(dirs)
-                for dir in ['images', 'questions.csv']:  # questions.csv must be checked at "last"
+                for dir in ['texts', 'questions.csv']:  # questions.csv must be checked at "last"
                     if not os.path.exists(os.path.join(extractPath, dir)):
                         # bad file structure
                         break
@@ -255,20 +255,20 @@ class DatasetUploadView(APIView):
                 print('extract successfull')
                 dirs = os.listdir(path=extractPath)
                 print(dirs)
-                for dir in ['images', 'questions.csv']:  # questions.csv must be checked at "last"
+                for dir in ['texts', 'questions.csv']:  # questions.csv must be checked at "last"
                     if not os.path.exists(os.path.join(extractPath, dir)):
                         # bad file structure
                         break
                     if dir == 'questions.csv':
-                        chopToMicrotasks(os.path.join(extractPath, dir), Image, ImageLabelingTask, 'images')
+                        chopToMicrotasks(os.path.join(extractPath, dir), Text, TextToTextTask, 'texts')
                         continue
-                    # dir == "images"
-                    imagesDir = os.path.join(extractPath, dir)
-                    for r, d, f in os.walk(top=imagesDir):
+                    # dir == "texts"
+                    textsDir = os.path.join(extractPath, dir)
+                    for r, d, f in os.walk(top=textsDir):
                         for file in f:
-                            img = Image(name=file)
-                            img.contentPath = os.path.join(imagesDir, file)
-                            img.save()
+                            txt = Text(name=file)
+                            txt.contentPath = os.path.join(textsDir, file)
+                            txt.save()
 
             return Response(status=204)
 
@@ -301,13 +301,13 @@ class FetchTask(APIView):
                 result = ImageLabelingTask.objects.order_by('?').all()[:10]
                 queryResponse = TaskSerializer(result, many = True)
             elif serializer.data.get('taskType') == 'Voice To Text':
-                result = ImageLabelingTask.objects.order_by('?').all()[:10]
+                result = VoiceToTextTask.objects.order_by('?').all()[:10]
                 queryResponse = TaskSerializer(result, many = True)
             elif serializer.data.get('taskType') == 'Text To Voice':
-                result = ImageLabelingTask.objects.order_by('?').all()[:10]
+                result = TextToVoiceTask.objects.order_by('?').all()[:10]
                 queryResponse = TaskSerializer(result, many = True)
             elif serializer.data.get('taskType') == 'Text To Text':
-                result = ImageLabelingTask.objects.order_by('?').all()[:10]
+                result = TextToTextTask.objects.order_by('?').all()[:10]
                 queryResponse = TaskSerializer(result, many = True)
             if queryResponse != None:
                 return Response(queryResponse.data, status=status.HTTP_200_OK)
