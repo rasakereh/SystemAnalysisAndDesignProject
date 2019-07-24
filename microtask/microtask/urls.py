@@ -19,9 +19,16 @@ from rest_framework_jwt.views import obtain_jwt_token
 from django.conf import settings
 from django.conf.urls.static import static
 
+
+from django.conf.urls.static import static
+from django.conf import settings
+
+
 urlpatterns = [
     path('', include('pagess.urls')),
     path('admin/', admin.site.urls),
     path('core/', include('core.urls')),
     path('token-auth/', obtain_jwt_token),
-] +static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+]
+
+urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
